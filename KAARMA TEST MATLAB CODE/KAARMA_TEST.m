@@ -23,7 +23,7 @@ I = [zeros(n_y, n_x), eye(n_y, n_y)]; % measurement matrix
 % Computation
 for t = 1 : 1 % instead of 2 we should have n, which is number of input-output pairs
     % Initialization 
-    psi_prime = []; % feature matrix update
+    feature_mat_prime = []; % feature matrix update
     S_prime = []; % state matrix update
     V{1} = eye(n_s, n_s); % To call V{1}(:,1) or V{1}(:,2)
     % Update State-Transition Gradient Matrix
@@ -36,12 +36,18 @@ for t = 1 : 1 % instead of 2 we should have n, which is number of input-output p
         Lambda{i} = 2*a_s*(A').*K{i}.*(D{i}'); % If I use D{i} I get wrong value
         V{i} = CalculateVi(i, n_s, Lambda, V);
         % Update Feature and State Matrices
-        psi_prime = [psi_prime, FeatureMatrix(s{i+1}, u{i+1})]; 
+        feature_mat_prime = [feature_mat_prime, FeatureMatrix(s{i+1}, u{i+1})]; 
         S_prime = [S_prime, s{i+1}]; % state matrix update
     end
     % Prediction
-    y(t)= I*s{t+2}; % I believe it is a single value, not a vector. Check eq. (13).
-    
+    y(t) = I*s{t+2}; % As (eq(18), pg.5) shows that y(t) is a single value.
+    % Update weights in the RKHS 
+    d(1) = [0]; e(t) = d(t) - y(t); 
+    A = CalculateAk(n_s, A, n, I, V, i, e);
+    feature_mat = [feature_mat, feature_mat_prime];
+    S = {S{:}, S_prime};
+    Omega = CalculateOmega(s, u, A, m+t);
+    m = m + t;
 end
     
 
